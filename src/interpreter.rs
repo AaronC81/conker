@@ -1,20 +1,20 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{collections::{HashMap, BTreeMap}, fmt::Display};
 
-use crossbeam_channel::{Sender, Receiver, SendError};
+use crossbeam_channel::{Sender, Receiver, SendError, Select, RecvError};
 
 use crate::node::{Node, NodeKind, BinaryOperator};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct TaskID(String);
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct TaskID(pub usize);
 
 impl Display for TaskID {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
+        write!(f, "{}", self.0)
     }
 }
 
 #[derive(Debug, Clone)]
-struct InterpreterError {
+pub struct InterpreterError {
     message: String,
 }
 
@@ -30,21 +30,26 @@ impl<T> From<SendError<T>> for InterpreterError {
     }
 }
 
-#[derive(Debug)]
+impl From<RecvError> for InterpreterError {
+    fn from(value: RecvError) -> Self {
+        InterpreterError::new(format!("receive error: {value}"))
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Globals {
-    tasks: HashMap<String, TaskID>,
+    pub tasks: HashMap<String, TaskID>,
 }
 
 #[derive(Debug)]
 pub struct TaskState {
-    name: String,
-    id: TaskID,
-    body: Vec<Node>,
+    pub name: String,
+    pub id: TaskID,
 
-    locals: HashMap<String, Value>,
+    pub locals: HashMap<String, Value>,
 
-    receivers: HashMap<TaskID, Receiver<Value>>,
-    senders: HashMap<TaskID, Sender<Value>>,
+    pub receivers: HashMap<TaskID, Receiver<Value>>,
+    pub senders: HashMap<TaskID, Sender<Value>>,
 }
 
 #[derive(Debug, Clone)]
@@ -62,7 +67,7 @@ impl Value {
         }
     }
 
-    fn get_task_id<'a>(&'a self, globals: &'a Globals) -> Result<TaskID, InterpreterError> {
+    fn get_task_id<'a>(&'a self) -> Result<TaskID, InterpreterError> {
         match self {
             Value::TaskReference(id) => Ok(id.clone()),
             _ => Err(InterpreterError::new("expected a task")),
@@ -71,8 +76,16 @@ impl Value {
 }
 
 impl TaskState {
-    fn evaluate(&mut self, node: &Node, globals: &Globals) -> Result<Value, InterpreterError> {
+    pub fn evaluate(&mut self, node: &Node, globals: &Globals) -> Result<Value, InterpreterError> {
         match &node.kind {
+            NodeKind::Body(v) => {
+                let mut result = Value::Null;
+                for i in v {
+                    result = self.evaluate(i, globals)?;
+                }
+                Ok(result)
+            }
+
             NodeKind::IntegerLiteral(i)
                 => Ok(Value::Integer(*i)),
             NodeKind::Identifier(name)
@@ -95,7 +108,7 @@ impl TaskState {
 
                 // Resolve the channel, and get its sender
                 let channel = self.evaluate(&channel, globals)?;
-                let other_task_id = channel.get_task_id(globals)?;
+                let other_task_id = channel.get_task_id()?;
                 let task_sender = self.get_sender_for_task(&other_task_id)?;
 
                 // Actually perform send
@@ -105,7 +118,37 @@ impl TaskState {
             },
 
             NodeKind::Receive { value, channel, bind_channel } => {
-                todo!()
+                if *bind_channel {
+                    // Receive from anything using select
+                    let ids_and_receivers: Vec<_> = self.receivers.iter().collect();
+                    let mut selector = Select::new();
+                    for (_, chan) in &ids_and_receivers {
+                        selector.recv(chan);
+                    }
+                    let selected = selector.select();
+                    
+                    // Figure out which channel we received from
+                    let (received_from, received_on_chan) = ids_and_receivers[selected.index()];
+
+                    // Fetch sent value and result variable
+                    let received_value = selected.recv(received_on_chan)?;
+                    let NodeKind::Identifier(value_local) = &value.kind else {
+                        return Err(InterpreterError::new("expected identifier for result of assign"))
+                    };
+
+                    // Get channel variable
+                    let NodeKind::Identifier(receiver_local) = &channel.kind else {
+                        return Err(InterpreterError::new("expected identifier to assign to as binding channel receiver"))
+                    };
+
+                    // Assign value and channel
+                    self.create_or_assign_local(&receiver_local, Value::TaskReference(received_from.clone()));
+                    self.create_or_assign_local(&value_local, received_value);
+
+                    Ok(Value::Null)
+                } else {
+                    todo!()
+                }
             }
         }
     }
@@ -123,6 +166,14 @@ impl TaskState {
     
         // Give up!
         Err(InterpreterError::new(format!("could not find `{name}`")))
+    }
+
+    fn create_or_assign_local(&mut self, name: &str, value: Value) {
+        if let Some(local) = self.locals.get_mut(name) {
+            *local = value;
+        } else {
+            self.locals.insert(name.to_string(), value);
+        }
     }
 
     fn get_sender_for_task(&self, id: &TaskID) -> Result<&Sender<Value>, InterpreterError> {

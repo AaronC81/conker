@@ -5,6 +5,8 @@ pub struct Node {
 
 #[derive(Debug, Clone)]
 pub enum NodeKind {
+    Body(Vec<Node>),
+
     IntegerLiteral(i64),
     Identifier(String),
 
