@@ -34,3 +34,16 @@ pub enum BinaryOperator {
     Multiply,
     Divide,
 }
+
+#[derive(Debug, Clone)]
+pub struct Item {
+    pub kind: ItemKind,
+}
+
+#[derive(Debug, Clone)]
+pub enum ItemKind {
+    TaskDefinition {
+        name: String,
+        body: Node,
+    }
+}

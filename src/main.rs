@@ -3,12 +3,37 @@ use std::{thread, collections::HashMap};
 use interpreter::{TaskState, TaskID, Globals};
 use node::{Node, NodeKind};
 
-use crate::node::BinaryOperator;
+use crate::{node::BinaryOperator, tokenizer::Tokenizer};
 
 mod node;
 mod interpreter;
+mod parser;
+mod tokenizer;
 
 fn main() {
+    let input =
+"
+a
+b
+c
+    d
+        e
+            f
+    g
+h
+    i
+
+";
+    let input_chars: Vec<_> = input.chars().collect();
+    let mut tokenizer = Tokenizer::new(&input_chars);
+    tokenizer.tokenize();
+    
+    println!("Tokens: {:#?}", tokenizer.tokens);
+    println!("Errors: {:#?}", tokenizer.errors);
+
+    return;
+
+
     // Set up a pair of threads
     // TODO: consider 1 to emulate TIS-100 behaviour
     let (send_a_to_b, recv_from_a_in_b) = crossbeam_channel::bounded(0);
