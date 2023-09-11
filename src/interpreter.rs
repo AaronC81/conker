@@ -109,7 +109,7 @@ impl TaskState {
                 // Resolve the channel, and get its sender
                 let channel = self.evaluate(&channel, globals)?;
                 let other_task_id = channel.get_task_id()?;
-                let task_sender = self.get_sender_for_task(&other_task_id)?;
+                let task_sender = self.get_sender_to_task(&other_task_id)?;
 
                 // Actually perform send
                 task_sender.send(value)?;
@@ -147,7 +147,23 @@ impl TaskState {
 
                     Ok(Value::Null)
                 } else {
-                    todo!()
+                    // Look up channel to receive on
+                    let receiving_from_val = self.evaluate(&channel, globals)?;
+                    let Value::TaskReference(id) = receiving_from_val else {
+                        return Err(InterpreterError::new("tried to receive from non-channel"))
+                    };
+
+                    // Get receiver
+                    let receiver = self.get_receiver_from_task(&id)?;
+
+                    // Fetch sent value and assign into result variable
+                    let received_value = receiver.recv()?;
+                    let NodeKind::Identifier(value_local) = &value.kind else {
+                        return Err(InterpreterError::new("expected identifier for result of assign"))
+                    };
+                    self.create_or_assign_local(&value_local, received_value);
+
+                    Ok(Value::Null)
                 }
             }
         }
@@ -176,8 +192,13 @@ impl TaskState {
         }
     }
 
-    fn get_sender_for_task(&self, id: &TaskID) -> Result<&Sender<Value>, InterpreterError> {
+    fn get_sender_to_task(&self, id: &TaskID) -> Result<&Sender<Value>, InterpreterError> {
         self.senders.get(id)
             .ok_or_else(|| InterpreterError::new(format!("no sender for task ID {id}")))
+    }
+
+    fn get_receiver_from_task(&self, id: &TaskID) -> Result<&Receiver<Value>, InterpreterError> {
+        self.receivers.get(id)
+            .ok_or_else(|| InterpreterError::new(format!("no receiver for task ID {id}")))
     }
 }
