@@ -1,5 +1,7 @@
 use std::{collections::HashMap, thread::{JoinHandle, self}, sync::Arc};
 
+use crossbeam_channel::{Receiver, Sender};
+
 use crate::{interpreter::{TaskID, TaskState, Globals, Value, InterpreterError}, node::Node};
 
 pub struct Runtime {
@@ -8,18 +10,23 @@ pub struct Runtime {
 
     next_task_id: TaskID,
 
-    handles: Vec<(TaskID, JoinHandle<Result<Value, InterpreterError>>)>,
+    result_sender: Sender<(TaskID, Result<Value, InterpreterError>)>,
+    result_receiver: Receiver<(TaskID, Result<Value, InterpreterError>)>,
 }
 
 impl Runtime {
     pub fn new() -> Self {
+        let (result_sender, result_receiver) = crossbeam_channel::unbounded();
+
         Self {
             globals: Globals {
                 tasks: HashMap::new(),
             },
             tasks: vec![],
             next_task_id: TaskID(1),
-            handles: vec![],
+
+            result_sender,
+            result_receiver
         }
     }
     
@@ -42,20 +49,24 @@ impl Runtime {
         for (task, body) in &mut self.tasks {
             let cloned_globals = self.globals.clone();
             let cloned_body = body.clone();
+            let cloned_sender = self.result_sender.clone();
 
             // TODO: cloning task is Bad, probably!
             let mut cloned_task = task.clone();
             
-            let handle = thread::spawn(move || {
-                cloned_task.evaluate(&cloned_body, &cloned_globals)
+            thread::spawn(move || {
+                let result = cloned_task.evaluate(&cloned_body, &cloned_globals);
+                cloned_sender.send((cloned_task.id, result))
             });
-            self.handles.push((task.id, handle));
         }
     }
 
     pub fn join(&mut self) -> Result<(), InterpreterError> {
-        for (id, handle) in self.handles.drain(..) {
-            let result = handle.join().unwrap()?;
+        // Wait for a number of results equal to the number of tasks
+        // TODO: what about panics?
+        for _ in 0..self.tasks.len() {
+            let (id, result) = self.result_receiver.recv().unwrap();
+            let result = result?;
 
             let (name, _) = self.globals.tasks.iter().find(|(_, x)| id == **x).unwrap();
             println!("Task {name} terminated with tail value {result:?}");
