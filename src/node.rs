@@ -3,6 +3,12 @@ pub struct Node {
     pub kind: NodeKind,
 }
 
+impl Node {
+    pub fn new(kind: NodeKind) -> Self {
+        Self { kind }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum NodeKind {
     Body(Vec<Node>),

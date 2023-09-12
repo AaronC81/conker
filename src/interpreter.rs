@@ -41,7 +41,7 @@ pub struct Globals {
     pub tasks: HashMap<String, TaskID>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TaskState {
     pub name: String,
     pub id: TaskID,

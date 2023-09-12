@@ -18,7 +18,7 @@ enum IndentFormat {
 
 #[derive(Debug, Clone)]
 pub struct Token {
-    kind: TokenKind,
+    pub kind: TokenKind,
 }
 
 impl Token {
@@ -27,13 +27,14 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     IntegerLiteral(i64),
     Identifier(String),
 
     SendArrow,
     ReceiveArrow,
+    QuestionMark,
 
     KwTask,
 
@@ -131,10 +132,14 @@ impl<'s> Tokenizer<'s> {
                 let buffer_str: String = buffer.iter().collect();
                 let int = buffer_str.parse::<i64>().unwrap();
                 self.tokens.push(Token::new(TokenKind::IntegerLiteral(int)))
+            } else if self.this() == '?' {
+                self.tokens.push(Token::new(TokenKind::QuestionMark))
             } else if self.this().is_whitespace() {
                 self.advance(); // Skip whitespace
             }
         }
+
+        self.tokens.push(Token::new(TokenKind::EndOfFile))
     }
 
     fn this(&self) -> char {
