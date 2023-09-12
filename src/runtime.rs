@@ -8,7 +8,7 @@ pub struct Runtime {
 
     next_task_id: TaskID,
 
-    handles: Vec<JoinHandle<Result<Value, InterpreterError>>>,
+    handles: Vec<(TaskID, JoinHandle<Result<Value, InterpreterError>>)>,
 }
 
 impl Runtime {
@@ -46,15 +46,19 @@ impl Runtime {
             // TODO: cloning task is Bad, probably!
             let mut cloned_task = task.clone();
             
-            self.handles.push(thread::spawn(move || {
+            let handle = thread::spawn(move || {
                 cloned_task.evaluate(&cloned_body, &cloned_globals)
-            }));
+            });
+            self.handles.push((task.id, handle));
         }
     }
 
     pub fn join(&mut self) -> Result<(), InterpreterError> {
-        for handle in self.handles.drain(..) {
-            handle.join().unwrap()?;
+        for (id, handle) in self.handles.drain(..) {
+            let result = handle.join().unwrap()?;
+
+            let (name, _) = self.globals.tasks.iter().find(|(_, x)| id == **x).unwrap();
+            println!("Task {name} terminated with tail value {result:?}");
         }
 
         Ok(())

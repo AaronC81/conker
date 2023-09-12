@@ -19,6 +19,7 @@ task A
 
 task B
     x <- A
+    x
 ";
 
     // Tokenize
