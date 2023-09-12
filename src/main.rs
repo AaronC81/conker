@@ -27,7 +27,8 @@ task Adder
     b <- chan
     c <- ?chan
     d <- chan
-    a + b + c + d
+    
+    (a + b) * (c + d)
 ";
 
     // Tokenize

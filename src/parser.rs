@@ -184,7 +184,7 @@ impl<'t> Parser<'t> {
     }
 
     fn parse_add_sub(&mut self) -> Option<Node> {
-        let mut left = self.parse_atom()?;
+        let mut left = self.parse_parens()?;
 
         loop {
             match self.this().kind {
@@ -210,6 +210,22 @@ impl<'t> Parser<'t> {
         }
 
         Some(left)
+    }
+
+    fn parse_parens(&mut self) -> Option<Node> {
+        if self.this().kind == TokenKind::LeftParen {
+            self.advance();
+            let result = self.parse_expression()?;
+            
+            let TokenKind::RightParen = &self.this().kind else {
+                self.push_unexpected_error(); return None;
+            };
+            self.advance();
+    
+            Some(result)
+        } else {
+            self.parse_atom()
+        }
     }
 
     fn parse_atom(&mut self) -> Option<Node> {

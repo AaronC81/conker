@@ -41,6 +41,9 @@ pub enum TokenKind {
     ReceiveArrow,
     QuestionMark,
 
+    LeftParen,
+    RightParen,
+
     KwTask,
 
     Indent,
@@ -143,10 +146,15 @@ impl<'s> Tokenizer<'s> {
                 // Easy single-character cases
                 match self.this() {
                     '?' => self.tokens.push(Token::new(TokenKind::QuestionMark)),
+
                     '+' => self.tokens.push(Token::new(TokenKind::Add)),
                     '-' => self.tokens.push(Token::new(TokenKind::Subtract)),
                     '*' => self.tokens.push(Token::new(TokenKind::Multiply)),
                     '/' => self.tokens.push(Token::new(TokenKind::Divide)),
+
+                    '(' => self.tokens.push(Token::new(TokenKind::LeftParen)),
+                    ')' => self.tokens.push(Token::new(TokenKind::RightParen)),
+
                     _ => self.push_unexpected_error(),
                 }
                 self.advance();
