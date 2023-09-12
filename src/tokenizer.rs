@@ -133,7 +133,8 @@ impl<'s> Tokenizer<'s> {
                 let int = buffer_str.parse::<i64>().unwrap();
                 self.tokens.push(Token::new(TokenKind::IntegerLiteral(int)))
             } else if self.this() == '?' {
-                self.tokens.push(Token::new(TokenKind::QuestionMark))
+                self.tokens.push(Token::new(TokenKind::QuestionMark));
+                self.advance();
             } else if self.this().is_whitespace() {
                 self.advance(); // Skip whitespace
             }

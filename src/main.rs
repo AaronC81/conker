@@ -18,7 +18,7 @@ task A
     123 -> B
 
 task B
-    x <- A
+    x <- ?c
     x
 ";
 
