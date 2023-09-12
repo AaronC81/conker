@@ -13,7 +13,7 @@ Syntax example:
     
 */
 
-use crate::{tokenizer::{Token, TokenKind}, node::{Item, Node, NodeKind, ItemKind}};
+use crate::{tokenizer::{Token, TokenKind}, node::{Item, Node, NodeKind, ItemKind, BinaryOperator}};
 
 pub struct Parser<'t> {
     tokens: &'t [Token],
@@ -115,7 +115,7 @@ impl<'t> Parser<'t> {
     }
 
     fn parse_send_receive(&mut self) -> Option<Node> {
-        let left = self.parse_mul_div()?;
+        let left = self.parse_expression()?;
 
         match self.this().kind {
             TokenKind::SendArrow => {
@@ -150,14 +150,66 @@ impl<'t> Parser<'t> {
         }
     }
 
+    fn parse_expression(&mut self) -> Option<Node> {
+        self.parse_mul_div()
+    }
+
     fn parse_mul_div(&mut self) -> Option<Node> {
-        // TODO
-        self.parse_add_sub()
+        let mut left = self.parse_add_sub()?;
+
+        loop {
+            match self.this().kind {
+                TokenKind::Multiply => {
+                    self.advance();
+                    left = Node::new(NodeKind::BinaryOperation {
+                        left: Box::new(left),
+                        op: BinaryOperator::Multiply,
+                        right: Box::new(self.parse_expression()?),
+                    });
+                },
+                TokenKind::Divide  => {
+                    self.advance();
+                    left = Node::new(NodeKind::BinaryOperation {
+                        left: Box::new(left),
+                        op: BinaryOperator::Divide,
+                        right: Box::new(self.parse_expression()?),
+                    });
+                },
+
+                _ => break,
+            }
+        }
+
+        Some(left)
     }
 
     fn parse_add_sub(&mut self) -> Option<Node> {
-        // TODO
-        self.parse_atom()
+        let mut left = self.parse_atom()?;
+
+        loop {
+            match self.this().kind {
+                TokenKind::Add => {
+                    self.advance();
+                    left = Node::new(NodeKind::BinaryOperation {
+                        left: Box::new(left),
+                        op: BinaryOperator::Add,
+                        right: Box::new(self.parse_expression()?),
+                    });
+                },
+                TokenKind::Subtract => {
+                    self.advance();
+                    left = Node::new(NodeKind::BinaryOperation {
+                        left: Box::new(left),
+                        op: BinaryOperator::Subtract,
+                        right: Box::new(self.parse_expression()?),
+                    });
+                },
+
+                _ => break,
+            }
+        }
+
+        Some(left)
     }
 
     fn parse_atom(&mut self) -> Option<Node> {

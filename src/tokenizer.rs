@@ -32,6 +32,11 @@ pub enum TokenKind {
     IntegerLiteral(i64),
     Identifier(String),
 
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+
     SendArrow,
     ReceiveArrow,
     QuestionMark,
@@ -132,11 +137,19 @@ impl<'s> Tokenizer<'s> {
                 let buffer_str: String = buffer.iter().collect();
                 let int = buffer_str.parse::<i64>().unwrap();
                 self.tokens.push(Token::new(TokenKind::IntegerLiteral(int)))
-            } else if self.this() == '?' {
-                self.tokens.push(Token::new(TokenKind::QuestionMark));
-                self.advance();
             } else if self.this().is_whitespace() {
                 self.advance(); // Skip whitespace
+            } else {
+                // Easy single-character cases
+                match self.this() {
+                    '?' => self.tokens.push(Token::new(TokenKind::QuestionMark)),
+                    '+' => self.tokens.push(Token::new(TokenKind::Add)),
+                    '-' => self.tokens.push(Token::new(TokenKind::Subtract)),
+                    '*' => self.tokens.push(Token::new(TokenKind::Multiply)),
+                    '/' => self.tokens.push(Token::new(TokenKind::Divide)),
+                    _ => self.push_unexpected_error(),
+                }
+                self.advance();
             }
         }
 
@@ -254,5 +267,10 @@ impl<'s> Tokenizer<'s> {
             }
             _ => None,
         }
+    }
+
+    fn push_unexpected_error(&mut self) {
+        let c = self.this();
+        self.errors.push(TokenizerError::new(format!("unexpected char {c:?}")));
     }
 }
