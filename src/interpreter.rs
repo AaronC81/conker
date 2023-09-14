@@ -109,12 +109,16 @@ impl TaskState {
                 let left = self.evaluate(&left, globals)?.get_integer()?;
                 let right = self.evaluate(&right, globals)?.get_integer()?;
 
-                Ok(Value::Integer(match op {
-                    BinaryOperator::Add         => left + right,
-                    BinaryOperator::Subtract    => left - right,
-                    BinaryOperator::Multiply    => left * right,
-                    BinaryOperator::Divide      => left / right,
-                }))
+                Ok(match op {
+                    BinaryOperator::Add         => Value::Integer(left + right),
+                    BinaryOperator::Subtract    => Value::Integer(left - right),
+                    BinaryOperator::Multiply    => Value::Integer(left * right),
+                    BinaryOperator::Divide      => Value::Integer(left / right),
+
+                    BinaryOperator::Equals      => Value::Boolean(left == right),
+                    BinaryOperator::LessThan    => Value::Boolean(left < right),
+                    BinaryOperator::GreaterThan => Value::Boolean(left > right),
+                })
             }
 
             NodeKind::If { condition, if_true } => {

@@ -37,6 +37,10 @@ pub enum TokenKind {
     Multiply,
     Divide,
 
+    Equals,
+    GreaterThan,
+    LessThan,
+
     SendArrow,
     ReceiveArrow,
     QuestionMark,
@@ -158,6 +162,13 @@ impl<'s> Tokenizer<'s> {
 
                     '(' => self.tokens.push(Token::new(TokenKind::LeftParen)),
                     ')' => self.tokens.push(Token::new(TokenKind::RightParen)),
+
+                    '=' if self.next() == '=' => {
+                        self.advance();
+                        self.tokens.push(Token::new(TokenKind::Equals))
+                    },
+                    '>' => self.tokens.push(Token::new(TokenKind::GreaterThan)),
+                    '<' => self.tokens.push(Token::new(TokenKind::LessThan)),
 
                     _ => self.push_unexpected_error(),
                 }

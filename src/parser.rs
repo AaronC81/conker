@@ -206,7 +206,7 @@ impl<'t> Parser<'t> {
     }
 
     fn parse_add_sub(&mut self) -> Option<Node> {
-        let mut left = self.parse_parens()?;
+        let mut left = self.parse_comparison()?;
 
         loop {
             match self.this().kind {
@@ -223,6 +223,43 @@ impl<'t> Parser<'t> {
                     left = Node::new(NodeKind::BinaryOperation {
                         left: Box::new(left),
                         op: BinaryOperator::Subtract,
+                        right: Box::new(self.parse_expression()?),
+                    });
+                },
+
+                _ => break,
+            }
+        }
+
+        Some(left)
+    }
+
+    fn parse_comparison(&mut self) -> Option<Node> {
+        let mut left = self.parse_parens()?;
+
+        loop {
+            match self.this().kind {
+                TokenKind::Equals => {
+                    self.advance();
+                    left = Node::new(NodeKind::BinaryOperation {
+                        left: Box::new(left),
+                        op: BinaryOperator::Equals,
+                        right: Box::new(self.parse_expression()?),
+                    });
+                },
+                TokenKind::LessThan => {
+                    self.advance();
+                    left = Node::new(NodeKind::BinaryOperation {
+                        left: Box::new(left),
+                        op: BinaryOperator::LessThan,
+                        right: Box::new(self.parse_expression()?),
+                    });
+                },
+                TokenKind::GreaterThan => {
+                    self.advance();
+                    left = Node::new(NodeKind::BinaryOperation {
+                        left: Box::new(left),
+                        op: BinaryOperator::GreaterThan,
                         right: Box::new(self.parse_expression()?),
                     });
                 },
