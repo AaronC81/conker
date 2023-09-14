@@ -107,6 +107,10 @@ impl<'t> Parser<'t> {
         let stmt = match self.this().kind {
             TokenKind::KwIf => self.parse_if(),
             TokenKind::KwWhile | TokenKind::KwLoop => self.parse_while(),
+            TokenKind::KwExit => {
+                self.advance();
+                Some(Node::new(NodeKind::Exit))
+            }
             _ => self.parse_send_receive(),
         };
 

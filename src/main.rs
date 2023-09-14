@@ -22,6 +22,7 @@ task Main
     null -> Counter
     x <- Counter
     x
+    exit
 ";
 
     for (task, result) in run_code(input).unwrap().into_iter() {

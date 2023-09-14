@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, BTreeMap}, fmt::Display};
+use std::{collections::{HashMap, BTreeMap}, fmt::Display, process::exit};
 
 use crossbeam_channel::{Sender, Receiver, SendError, Select, RecvError};
 
@@ -204,6 +204,8 @@ impl TaskState {
                     Ok(Value::Null)
                 }
             }
+
+            NodeKind::Exit => exit(0),
         }
     }
 

@@ -43,6 +43,8 @@ pub enum NodeKind {
         channel: Box<Node>,
         bind_channel: bool,
     },
+
+    Exit,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

@@ -55,6 +55,7 @@ pub enum TokenKind {
     KwTrue,
     KwFalse,
     KwNull,
+    KwExit,
 
     Indent,
     Dedent,
@@ -235,6 +236,7 @@ impl<'s> Tokenizer<'s> {
             "if" => Some(TokenKind::KwIf),
             "while" => Some(TokenKind::KwWhile),
             "loop" => Some(TokenKind::KwLoop),
+            "exit" => Some(TokenKind::KwExit),
             _ => None,
         }
     }
