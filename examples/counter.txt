@@ -1,0 +1,20 @@
+task Bouncer
+    loop
+        a <- ?c
+        a -> c
+
+task Counter
+    0 -> Bouncer
+    loop
+        x <- Bouncer
+        _ <- ?c
+        (x + 1) -> c
+        (x + 1) -> Bouncer
+
+task Main
+    loop
+        null -> Counter
+        x <- Counter
+        x -> $out
+        if (x == 5)
+            exit

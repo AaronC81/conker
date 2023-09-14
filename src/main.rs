@@ -1,33 +1,17 @@
-use std::process::exit;
+use std::{process::exit, env::args, fs};
 
 use concurrent_lang::run_code;
 
 fn main() {
-    let input =
-"
-task Bouncer
-    loop
-        a <- ?c
-        a -> c
+    let args: Vec<_> = args().collect();
+    if args.len() != 2 {
+        println!("Usage: ... [file]");
+        exit(1);
+    }
+    let file = &args[1];
+    let input = fs::read_to_string(file).unwrap();
 
-task Counter
-    0 -> Bouncer
-    loop
-        x <- Bouncer
-        _ <- ?c
-        (x + 1) -> c
-        (x + 1) -> Bouncer
-
-task Main
-    loop
-        null -> Counter
-        x <- Counter
-        x -> $out
-        if (x == 5)
-            exit
-";
-
-    for (task, result) in run_code(input).unwrap().into_iter() {
+    for (task, result) in run_code(&input).unwrap().into_iter() {
         if result.is_err() {
             exit(1);
         }
