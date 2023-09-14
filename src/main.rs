@@ -1,6 +1,6 @@
 use std::{process::exit, env::args, fs};
 
-use concurrent_lang::run_code;
+use conker::run_code;
 
 fn main() {
     let args: Vec<_> = args().collect();

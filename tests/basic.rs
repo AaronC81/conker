@@ -1,4 +1,4 @@
-use concurrent_lang::interpreter::Value;
+use conker::interpreter::Value;
 use indoc::indoc;
 
 use crate::utils::{run_one_task, run_one_expression};
