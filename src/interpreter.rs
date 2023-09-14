@@ -58,6 +58,12 @@ pub enum Value {
     Integer(i64),
     Boolean(bool),
     TaskReference(TaskID),
+    MagicTaskReference(MagicTask),
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum MagicTask {
+    Out,
 }
 
 impl Value {
@@ -81,6 +87,18 @@ impl Value {
         match self {
             Value::TaskReference(id) => Ok(id.clone()),
             _ => Err(InterpreterError::new("expected a task")),
+        }
+    }
+
+    fn to_printable_string(&self) -> String {
+        match self {
+            Value::Null => "null".to_string(),
+            Value::Integer(i) => i.to_string(),
+            Value::Boolean(b) => b.to_string(),
+            Value::TaskReference(id) => format!("<task {}>", id.0),
+            Value::MagicTaskReference(ty) => format!("<task (magic) {}>", match ty {
+                MagicTask::Out => "$out",
+            }),
         }
     }
 }
@@ -144,8 +162,16 @@ impl TaskState {
             NodeKind::Send { value, channel } => {
                 let value = self.evaluate(&value, globals)?;
 
-                // Resolve the channel, and get its sender
+                // Resolve the channel
                 let channel = self.evaluate(&channel, globals)?;
+                if let Value::MagicTaskReference(magic) = channel {
+                    match magic {
+                        MagicTask::Out => println!("{}", value.to_printable_string()),
+                    }
+                    return Ok(Value::Null)
+                }
+
+                // We'll assume it's a normal task - get its sender
                 let other_task_id = channel.get_task_id()?;
                 let task_sender = self.get_sender_to_task(&other_task_id)?;
 
@@ -213,6 +239,11 @@ impl TaskState {
         // Try locals
         if let Some(val) = self.locals.get(name) {
             return Ok(val.clone());
+        }
+
+        // Check magic tasks
+        if name == "$out" {
+            return Ok(Value::MagicTaskReference(MagicTask::Out))
         }
 
         // Else, try tasks

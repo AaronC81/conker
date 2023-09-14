@@ -19,10 +19,12 @@ task Counter
         (x + 1) -> Bouncer
 
 task Main
-    null -> Counter
-    x <- Counter
-    x
-    exit
+    loop
+        null -> Counter
+        x <- Counter
+        x -> $out
+        if (x == 5)
+            exit
 ";
 
     for (task, result) in run_code(input).unwrap().into_iter() {
