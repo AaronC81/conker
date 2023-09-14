@@ -92,7 +92,13 @@ impl<'s> Tokenizer<'s> {
 
     pub fn tokenize(&mut self) {
         while !self.is_at_end() {
-            if let Some(id) = self.try_get_identifier() {
+            if self.this() == '#' {
+                // This is a line comment - consume until the end
+                self.advance();
+                while self.this() != '\n' && self.this() != '\0' {
+                    self.advance();
+                }
+            } else if let Some(id) = self.try_get_identifier() {
                 if let Some(kw) = Self::try_convert_to_keyword(&id) {
                     self.tokens.push(Token::new(kw))
                 } else {
