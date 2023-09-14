@@ -29,6 +29,10 @@ pub enum NodeKind {
         condition: Box<Node>,
         if_true: Box<Node>,
     },
+    While {
+        condition: Box<Node>,
+        body: Box<Node>,
+    },
 
     Send {
         value: Box<Node>,

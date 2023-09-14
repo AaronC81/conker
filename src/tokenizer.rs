@@ -50,6 +50,7 @@ pub enum TokenKind {
 
     KwTask,
     KwIf,
+    KwWhile,
     KwTrue,
     KwFalse,
     KwNull,
@@ -231,6 +232,7 @@ impl<'s> Tokenizer<'s> {
             "false" => Some(TokenKind::KwFalse),
             "null" => Some(TokenKind::KwNull),
             "if" => Some(TokenKind::KwIf),
+            "while" => Some(TokenKind::KwWhile),
             _ => None,
         }
     }

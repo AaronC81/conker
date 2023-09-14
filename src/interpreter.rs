@@ -130,6 +130,16 @@ impl TaskState {
                     Ok(Value::Null)
                 }
             }
+
+            NodeKind::While { condition, body } => {
+                let condition = self.evaluate(&condition, globals)?;
+
+                let mut result = Value::Null;
+                while condition.is_truthy() {
+                    result = self.evaluate(&body, globals)?
+                }
+                Ok(result)
+            }
             
             NodeKind::Send { value, channel } => {
                 let value = self.evaluate(&value, globals)?;
