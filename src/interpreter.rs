@@ -13,7 +13,7 @@ impl Display for TaskID {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterpreterError {
     message: String,
 }
@@ -52,7 +52,7 @@ pub struct TaskState {
     pub senders: HashMap<TaskID, Sender<Value>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Value {
     Null,
     Integer(i64),

@@ -13,6 +13,7 @@ name = "concurrent-lang"
 version = "0.1.0"
 dependencies = [
  "crossbeam-channel",
+ "indoc",
 ]
 
 [[package]]
@@ -33,3 +34,9 @@ checksum = "5a22b2d63d4d1dc0b7f1b6b2747dd0088008a9be28b6ddf0b1e7d335e3037294"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "indoc"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c785eefb63ebd0e33416dfcb8d6da0bf27ce752843a45632a67bf10d4d4b5c4"
