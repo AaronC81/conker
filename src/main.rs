@@ -1,6 +1,6 @@
-use std::{thread, collections::HashMap};
+use std::{thread, collections::HashMap, process::exit};
 
-use interpreter::{TaskState, TaskID, Globals};
+use interpreter::{TaskState, TaskID, Globals, Value, InterpreterError};
 use node::{Node, NodeKind};
 
 use crate::{node::{BinaryOperator, ItemKind}, tokenizer::Tokenizer, parser::Parser, runtime::Runtime};
@@ -11,11 +11,7 @@ mod parser;
 mod tokenizer;
 mod runtime;
 
-fn main() {
-    let input =
-"
-";
-
+pub fn run_code(input: &str) -> Option<HashMap<String, Result<Value, InterpreterError>>> {
     // Tokenize
     let input_chars: Vec<_> = input.chars().collect();
     let mut tokenizer = Tokenizer::new(&input_chars);
@@ -23,7 +19,7 @@ fn main() {
     
     if !tokenizer.errors.is_empty() {
         println!("Errors: {:#?}", tokenizer.errors);
-        return;
+        return None;
     }
 
     // Parse
@@ -32,7 +28,7 @@ fn main() {
 
     if !parser.errors.is_empty() {
         println!("Errors: {:#?}", parser.errors);
-        return;
+        return None;
     }
 
     // Create a runtime with tasks
@@ -46,5 +42,19 @@ fn main() {
     // Run!
     runtime.create_task_channels();
     runtime.start();
-    runtime.join().unwrap();
+    Some(runtime.join())
+}
+
+fn main() {
+    let input =
+"
+task A
+    123
+";
+
+    for (task, result) in run_code(input).unwrap().into_iter() {
+        if result.is_err() {
+            exit(1);
+        }
+    }
 }

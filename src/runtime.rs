@@ -61,18 +61,25 @@ impl Runtime {
         }
     }
 
-    pub fn join(&mut self) -> Result<(), InterpreterError> {
+    pub fn join(&mut self) -> HashMap<String, Result<Value, InterpreterError>> {
+        let mut results = HashMap::new();
+
         // Wait for a number of results equal to the number of tasks
         // TODO: what about panics?
         for _ in 0..self.tasks.len() {
             let (id, result) = self.result_receiver.recv().unwrap();
-            let result = result?;
 
             let (name, _) = self.globals.tasks.iter().find(|(_, x)| id == **x).unwrap();
-            println!("Task {name} terminated with tail value {result:?}");
+
+            match result {
+                Ok(ref value) => println!("Task {name} terminated with tail value {value:?}"),
+                Err(_) => println!("Task {name} encountered an error")
+            }
+
+            results.insert(name.to_string(), result);
         }
 
-        Ok(())
+        results
     }
 
     pub fn create_task_channels(&mut self) {
