@@ -45,6 +45,10 @@ pub enum TokenKind {
     RightParen,
 
     KwTask,
+    KwIf,
+    KwTrue,
+    KwFalse,
+    KwNull,
 
     Indent,
     Dedent,
@@ -212,6 +216,10 @@ impl<'s> Tokenizer<'s> {
     fn try_convert_to_keyword(s: &str) -> Option<TokenKind> {
         match s {
             "task" => Some(TokenKind::KwTask),
+            "true" => Some(TokenKind::KwTrue),
+            "false" => Some(TokenKind::KwFalse),
+            "null" => Some(TokenKind::KwNull),
+            "if" => Some(TokenKind::KwIf),
             _ => None,
         }
     }

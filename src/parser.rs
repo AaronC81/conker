@@ -86,6 +86,18 @@ impl<'t> Parser<'t> {
         };
         self.advance();
 
+        // Parse body
+        let body = self.parse_body();
+
+        self.items.push(Item {
+            kind: ItemKind::TaskDefinition {
+                name,
+                body,
+            }
+        })
+    }
+
+    fn parse_body(&mut self) -> Node {
         // Build up a body until we hit a dedent
         // (If there is nested indentation, that should be handled by the child parser)
         let mut body_nodes = vec![];
@@ -96,22 +108,49 @@ impl<'t> Parser<'t> {
         }
         self.advance(); // skip the dedent
 
-        self.items.push(Item {
-            kind: ItemKind::TaskDefinition {
-                name,
-                body: Node::new(NodeKind::Body(body_nodes))
-            }
-        })
+        Node::new(NodeKind::Body(body_nodes))
     }
 
     fn parse_statement(&mut self) -> Option<Node> {
-        let stmt = self.parse_send_receive();
+        let stmt = match self.this().kind {
+            TokenKind::KwIf => self.parse_if(),
+            _ => self.parse_send_receive(),
+        };
 
         while self.this().kind == TokenKind::NewLine {
             self.advance();
         }
 
         stmt
+    }
+
+    fn parse_if(&mut self) -> Option<Node> {
+        // Skip keyword
+        let TokenKind::KwIf = &self.this().kind else {
+            self.push_unexpected_error(); return None;
+        };
+        self.advance();
+
+        // Parse condition
+        let condition = self.parse_expression()?;
+
+        // Expect newline, then indentation
+        let TokenKind::NewLine = &self.this().kind else {
+            self.push_unexpected_error(); return None;
+        };
+        self.advance();
+        let TokenKind::Indent = &self.this().kind else {
+            self.push_unexpected_error(); return None;
+        };
+        self.advance();
+
+        // Parse body
+        let body = self.parse_body();
+
+        Some(Node::new(NodeKind::If {
+            condition: Box::new(condition),
+            if_true: Box::new(body),
+        }))
     }
 
     fn parse_send_receive(&mut self) -> Option<Node> {
@@ -235,11 +274,24 @@ impl<'t> Parser<'t> {
                 self.advance();
                 x
             },
+
             TokenKind::IntegerLiteral(int) => {
                 let x = Some(Node::new(NodeKind::IntegerLiteral(*int)));
                 self.advance();
                 x
             },
+            TokenKind::KwTrue => {
+                self.advance();
+                Some(Node::new(NodeKind::BooleanLiteral(true)))
+            },
+            TokenKind::KwFalse => {
+                self.advance();
+                Some(Node::new(NodeKind::BooleanLiteral(false)))
+            },
+            TokenKind::KwNull => {
+                self.advance();
+                Some(Node::new(NodeKind::NullLiteral))
+            }
             
             _ => {
                 self.push_unexpected_error();

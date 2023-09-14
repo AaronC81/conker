@@ -14,12 +14,20 @@ pub enum NodeKind {
     Body(Vec<Node>),
 
     IntegerLiteral(i64),
+    BooleanLiteral(bool),
+    NullLiteral,
+
     Identifier(String),
 
     BinaryOperation {
         left: Box<Node>,
         op: BinaryOperator,
         right: Box<Node>,
+    },
+
+    If {
+        condition: Box<Node>,
+        if_true: Box<Node>,
     },
 
     Send {

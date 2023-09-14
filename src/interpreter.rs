@@ -56,10 +56,20 @@ pub struct TaskState {
 pub enum Value {
     Null,
     Integer(i64),
+    Boolean(bool),
     TaskReference(TaskID),
 }
 
 impl Value {
+    fn is_truthy(&self) -> bool {
+        match self {
+            Self::Boolean(false) => false,
+            Self::Null => false,
+
+            _ => true,
+        }
+    }
+
     fn get_integer(&self) -> Result<i64, InterpreterError> {
         match self {
             Value::Integer(i) => Ok(*i),
@@ -88,6 +98,10 @@ impl TaskState {
 
             NodeKind::IntegerLiteral(i)
                 => Ok(Value::Integer(*i)),
+            NodeKind::BooleanLiteral(b)
+                => Ok(Value::Boolean(*b)),
+            NodeKind::NullLiteral
+                => Ok(Value::Null),
             NodeKind::Identifier(name)
                 => self.resolve(&name, globals),
             
@@ -101,6 +115,16 @@ impl TaskState {
                     BinaryOperator::Multiply    => left * right,
                     BinaryOperator::Divide      => left / right,
                 }))
+            }
+
+            NodeKind::If { condition, if_true } => {
+                let condition = self.evaluate(&condition, globals)?;
+
+                if condition.is_truthy() {
+                    self.evaluate(&if_true, globals)
+                } else {
+                    Ok(Value::Null)
+                }
             }
             
             NodeKind::Send { value, channel } => {

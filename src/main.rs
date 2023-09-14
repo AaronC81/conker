@@ -14,21 +14,6 @@ mod runtime;
 fn main() {
     let input =
 "
-task Emitter1
-    2 -> Adder
-    4 -> Adder
-
-task Emitter2
-    3 -> Adder
-    7 -> Adder
-
-task Adder
-    a <- ?chan
-    b <- chan
-    c <- ?chan
-    d <- chan
-    
-    (a + b) * (c + d)
 ";
 
     // Tokenize
