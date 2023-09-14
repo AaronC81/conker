@@ -1,0 +1,10 @@
+task Adder
+    a <- ?c
+    b <- c
+    a + b -> c
+
+task Main
+    5 -> Adder
+    4 -> Adder
+    result <- Adder
+    result -> $out

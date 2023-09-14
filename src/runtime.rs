@@ -92,7 +92,6 @@ impl Runtime {
             // Create channel to send to all others
             // TODO: tasks can't send to themselves - is this desirable?
             for (other, _) in left.iter_mut().chain(right.iter_mut()) {
-                // TODO: consider 1 for TIS-100-likeness
                 let (sender, receiver) = crossbeam_channel::bounded(0);
                 other.receivers.insert(subject.id, receiver);
                 subject.senders.insert(other.id, sender);

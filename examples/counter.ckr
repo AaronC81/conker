@@ -1,8 +1,12 @@
+# Receives a value and sends it back 
+# Can be used as a "register" for short-term storage
 task Bouncer
     loop
         a <- ?c
         a -> c
 
+# When receiving any message, responds with a number, 
+# then increments the number for next time
 task Counter
     0 -> Bouncer
     loop
@@ -11,10 +15,9 @@ task Counter
         (x + 1) -> c
         (x + 1) -> Bouncer
 
+# Counts forever
 task Main
     loop
         null -> Counter
         x <- Counter
         x -> $out
-        if (x == 5)
-            exit
