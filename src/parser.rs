@@ -51,7 +51,7 @@ impl<'t> Parser<'t> {
     fn parse_items(&mut self) {
         loop {
             match self.this().kind {
-                TokenKind::KwTask => self.parse_task(),
+                TokenKind::KwTask => { self.parse_task(); },
                 TokenKind::NewLine => self.advance(),
                 TokenKind::EndOfFile => break,
                 _ => {
@@ -62,29 +62,20 @@ impl<'t> Parser<'t> {
         }
     }
 
-    fn parse_task(&mut self) {
+    fn parse_task(&mut self) -> Option<()> {
         // Skip keyword
-        let TokenKind::KwTask = self.this().kind else {
-            self.push_unexpected_error(); return;
-        };
-        self.advance();
+        self.expect(TokenKind::KwTask)?;
 
         // Get name
         let TokenKind::Identifier(name) = &self.this().kind else {
-            self.push_unexpected_error(); return;
+            self.push_unexpected_error(); return None;
         };
         let name = name.to_string();
         self.advance();
 
         // Expect newline, then indentation
-        let TokenKind::NewLine = &self.this().kind else {
-            self.push_unexpected_error(); return;
-        };
-        self.advance();
-        let TokenKind::Indent = &self.this().kind else {
-            self.push_unexpected_error(); return;
-        };
-        self.advance();
+        self.expect(TokenKind::NewLine)?;
+        self.expect(TokenKind::Indent)?;
 
         // Parse body
         let body = self.parse_body();
@@ -94,7 +85,8 @@ impl<'t> Parser<'t> {
                 name,
                 body,
             }
-        })
+        });
+        Some(())
     }
 
     fn parse_body(&mut self) -> Node {
@@ -126,23 +118,14 @@ impl<'t> Parser<'t> {
 
     fn parse_if(&mut self) -> Option<Node> {
         // Skip keyword
-        let TokenKind::KwIf = &self.this().kind else {
-            self.push_unexpected_error(); return None;
-        };
-        self.advance();
+        self.expect(TokenKind::KwIf)?;
 
         // Parse condition
         let condition = self.parse_expression()?;
 
         // Expect newline, then indentation
-        let TokenKind::NewLine = &self.this().kind else {
-            self.push_unexpected_error(); return None;
-        };
-        self.advance();
-        let TokenKind::Indent = &self.this().kind else {
-            self.push_unexpected_error(); return None;
-        };
-        self.advance();
+        self.expect(TokenKind::NewLine)?;
+        self.expect(TokenKind::Indent)?;
 
         // Parse body
         let body = self.parse_body();
@@ -317,6 +300,17 @@ impl<'t> Parser<'t> {
         } else {
             &self.tokens[self.index]
         }
+    }
+
+    #[must_use]
+    fn expect(&mut self, kind: TokenKind) -> Option<()> {
+        if &self.this().kind != &kind {
+            self.push_unexpected_error();
+            return None;
+        };
+        self.advance();
+
+        Some(())
     }
 
     fn push_unexpected_error(&mut self) {
