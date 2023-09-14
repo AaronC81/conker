@@ -106,7 +106,7 @@ impl<'t> Parser<'t> {
     fn parse_statement(&mut self) -> Option<Node> {
         let stmt = match self.this().kind {
             TokenKind::KwIf => self.parse_if(),
-            TokenKind::KwWhile => self.parse_while(),
+            TokenKind::KwWhile | TokenKind::KwLoop => self.parse_while(),
             _ => self.parse_send_receive(),
         };
 
@@ -139,10 +139,24 @@ impl<'t> Parser<'t> {
 
     fn parse_while(&mut self) -> Option<Node> {
         // Skip keyword
-        self.expect(TokenKind::KwWhile)?;
+        let condition;
+        match self.this().kind {
+            TokenKind::KwWhile => {
+                // Parse condition
+                self.advance();
+                condition = self.parse_expression()?;
+            }
 
-        // Parse condition
-        let condition = self.parse_expression()?;
+            TokenKind::KwLoop => {
+                self.advance();
+                condition = Node::new(NodeKind::BooleanLiteral(true));
+            }
+
+            _ => {
+                self.expect(TokenKind::KwWhile)?;
+                unreachable!();
+            }
+        }
 
         // Expect newline, then indentation
         self.expect(TokenKind::NewLine)?;

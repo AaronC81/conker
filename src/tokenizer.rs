@@ -51,6 +51,7 @@ pub enum TokenKind {
     KwTask,
     KwIf,
     KwWhile,
+    KwLoop,
     KwTrue,
     KwFalse,
     KwNull,
@@ -233,6 +234,7 @@ impl<'s> Tokenizer<'s> {
             "null" => Some(TokenKind::KwNull),
             "if" => Some(TokenKind::KwIf),
             "while" => Some(TokenKind::KwWhile),
+            "loop" => Some(TokenKind::KwLoop),
             _ => None,
         }
     }

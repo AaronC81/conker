@@ -6,13 +6,13 @@ fn main() {
     let input =
 "
 task Bouncer
-    while true
+    loop
         a <- ?c
         a -> c
 
 task Counter
     0 -> Bouncer
-    while true
+    loop
         x <- Bouncer
         _ <- ?c
         (x + 1) -> c
