@@ -259,6 +259,11 @@ impl<'s> Tokenizer<'s> {
     }
 
     fn consume_all_indentation(&mut self) -> Result<usize, TokenizerError> {
+        // If lines are blank, ignore them and move onto the next one
+        while self.this() == '\n' {
+            self.advance();
+        }
+
         // Try consuming a single indentation character first, to get the baseline format
         let Some(given_format) = self.consume_one_indentation() else {
             // There's no indentation - return nothing
@@ -285,6 +290,14 @@ impl<'s> Tokenizer<'s> {
 
             // Check if the indentation is over
             if this_indent.is_none() {
+                // Is there any content on this line, or does it end immediately after this
+                // indentation we consumed?
+                if self.this() == '\n' {
+                    // It's a blank line; ignore everything we gathered and try again on the next
+                    self.advance();
+                    return self.consume_all_indentation();
+                }
+
                 if set_indent_size {
                     self.indent_size = current_indent_size;
                 }
