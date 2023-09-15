@@ -69,6 +69,16 @@ fn test_array() {
             Value::Integer(3),
         ]))
     );
+
+    // Indexing
+    assert_eq!(
+        run_one_task(indoc!{"
+            task X
+                x = [ 10, 20, 30 ]
+                x[1] + x[-1]
+        "}),
+        Ok(Value::Integer(20 + 30))
+    );
 }
 
 #[test]

@@ -296,7 +296,7 @@ impl<'t> Parser<'t> {
     }
 
     fn parse_mul_div(&mut self) -> Option<Node> {
-        let mut left = self.parse_parens()?;
+        let mut left = self.parse_index()?;
 
         loop {
             match self.this().kind {
@@ -305,7 +305,7 @@ impl<'t> Parser<'t> {
                     left = Node::new(NodeKind::BinaryOperation {
                         left: Box::new(left),
                         op: BinaryOperator::Multiply,
-                        right: Box::new(self.parse_parens()?),
+                        right: Box::new(self.parse_index()?),
                     });
                 },
                 TokenKind::Divide  => {
@@ -313,12 +313,27 @@ impl<'t> Parser<'t> {
                     left = Node::new(NodeKind::BinaryOperation {
                         left: Box::new(left),
                         op: BinaryOperator::Divide,
-                        right: Box::new(self.parse_parens()?),
+                        right: Box::new(self.parse_index()?),
                     });
                 },
 
                 _ => break,
             }
+        }
+
+        Some(left)
+    }
+
+    fn parse_index(&mut self) -> Option<Node> {
+        let mut left = self.parse_parens()?;
+
+        while self.this().kind == TokenKind::LeftBrace {
+            self.advance();
+            left = Node::new(NodeKind::Index {
+                value: Box::new(left),
+                index: Box::new(self.parse_expression()?),
+            });
+            self.expect(TokenKind::RightBrace)?;
         }
 
         Some(left)

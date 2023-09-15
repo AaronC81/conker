@@ -178,6 +178,28 @@ impl TaskState {
 
                 Ok(Value::Null)
             }
+
+            NodeKind::Index { value, index } => {
+                let value = self.evaluate(&value, globals)?;
+                let index = self.evaluate(&index, globals)?;
+
+                let Value::Array(ref items) = value else {
+                    return Err(InterpreterError::new("expected array"))
+                };
+
+                let mut index = index.get_integer()?;
+
+                if index < 0 {
+                    index = items.len() as i64 + index;
+                }
+                let index = index as usize;
+
+                if let Some(item) = items.get(index) {
+                    Ok(item.clone())
+                } else {
+                    return Err(InterpreterError::new(format!("index {index} is out of range")))
+                }
+            }
             
             NodeKind::Send { value, channel } => {
                 let value = self.evaluate(&value, globals)?;

@@ -39,6 +39,10 @@ pub enum NodeKind {
         value: Box<Node>,
         destination: Box<Node>,
     },
+    Index {
+        value: Box<Node>,
+        index: Box<Node>,
+    },
 
     Send {
         value: Box<Node>,
