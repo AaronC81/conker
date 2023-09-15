@@ -79,5 +79,6 @@ pub enum ItemKind {
     TaskDefinition {
         name: String,
         body: Node,
+        instances: Option<usize>,
     }
 }

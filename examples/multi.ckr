@@ -1,0 +1,12 @@
+task ConstantSource[5]
+    5 -> Main
+
+task Main
+    total = 0
+    i = 0
+    while i < 5
+        x <- ConstantSource[i]
+        total -> $out
+        total = total + x
+        i = i + 1
+    total

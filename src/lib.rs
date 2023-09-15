@@ -35,7 +35,7 @@ pub fn run_code(input: &str) -> Option<HashMap<String, Result<Value, Interpreter
     let mut runtime = Runtime::new();
     for item in parser.items {
         match item.kind {
-            ItemKind::TaskDefinition { name, body } => runtime.add_task(&name, body),
+            ItemKind::TaskDefinition { name, body, instances } => runtime.add_task(&name, body, instances),
         }
     }
 

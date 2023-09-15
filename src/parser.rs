@@ -73,6 +73,23 @@ impl<'t> Parser<'t> {
         let name = name.to_string();
         self.advance();
 
+        // Check for multiple instances
+        let mut instances = None;
+        if self.this().kind == TokenKind::LeftBrace {
+            self.advance();
+            let TokenKind::IntegerLiteral(instance_count) = &self.this().kind else {
+                self.push_unexpected_error(); return None;
+            };
+            if *instance_count < 1 {
+                self.errors.push(ParserError::new("task must have 1 or more instances"));
+                return None;
+            }
+            instances = Some(*instance_count as usize);
+            self.advance();
+
+            self.expect(TokenKind::RightBrace)?;
+        }
+
         // Expect newline, then indentation
         self.expect(TokenKind::NewLine)?;
         self.expect(TokenKind::Indent)?;
@@ -84,6 +101,7 @@ impl<'t> Parser<'t> {
             kind: ItemKind::TaskDefinition {
                 name,
                 body,
+                instances,
             }
         });
         Some(())
@@ -181,7 +199,7 @@ impl<'t> Parser<'t> {
         match self.this().kind {
             TokenKind::SendArrow => {
                 self.advance();
-                let right = self.parse_atom()?;
+                let right = self.parse_expression()?;
 
                 Some(Node::new(NodeKind::Send {
                     value: Box::new(left),
@@ -198,7 +216,7 @@ impl<'t> Parser<'t> {
                     self.advance();
                 }
 
-                let right = self.parse_atom()?;
+                let right = self.parse_expression()?;
 
                 Some(Node::new(NodeKind::Receive {
                     value: Box::new(left),

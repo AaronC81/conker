@@ -38,7 +38,7 @@ impl From<RecvError> for InterpreterError {
 
 #[derive(Debug, Clone)]
 pub struct Globals {
-    pub tasks: HashMap<String, TaskID>,
+    pub tasks: HashMap<String, Value>,
 }
 
 #[derive(Clone, Debug)]
@@ -158,10 +158,13 @@ impl TaskState {
             }
 
             NodeKind::While { condition, body } => {
-                let condition = self.evaluate(&condition, globals)?;
-
                 let mut result = Value::Null;
-                while condition.is_truthy() {
+                loop {
+                    let cond = self.evaluate(&condition, globals)?;
+                    if !cond.is_truthy() {
+                        break
+                    }
+                    
                     result = self.evaluate(&body, globals)?
                 }
                 Ok(result)
@@ -290,7 +293,7 @@ impl TaskState {
 
         // Else, try tasks
         if let Some(val) = globals.tasks.get(name) {
-            return Ok(Value::TaskReference(val.clone()));
+            return Ok(val.clone());
         }
     
         // Give up!
