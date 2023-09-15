@@ -6,10 +6,12 @@ computer architecture featured in
 
 ## Semantics
 
-A Conker program is comprised of _tasks_, all of which run concurrently as separate threads. Tasks
-can communicate with each other by sending values over _channels_.
+A Conker program is comprised of _tasks_, all of which run concurrently as separate threads. All
+tasks begin at the start of the program, and the program continues running until all tasks have
+finished, or any task runs an `exit` statement.
 
-Channels have no buffer - sends and receives block until the other side is satisfied.
+Tasks can communicate with each other by sending values over _channels_. Channels have no buffer -
+sends and receives block until the other side is satisfied.
 
 The closest to "Hello, world" we can get in a language without strings:
 
@@ -42,7 +44,7 @@ That reference can then be used to send or receive further messages on the same 
 definition of the `Adder` task, this means that `b` will definitely be received through the same
 channel as `a`.
 
-## Advanced Example - Counter
+### Example - Counter
 
 ```
 # When receiving any message, responds with a number, 
@@ -60,4 +62,36 @@ task Main
         null -> Counter
         x <- Counter
         x -> $out
+```
+
+## Multi-Tasks
+
+Sometimes, you may want to parallelise an operation by running multiple instances of the same task.
+Conker enables this with _multi-tasks_, which can be defined using `[n]` at the end of a task
+definition.
+
+When defining a multi-task, that task's name refers to an _array_ of tasks, rather than directly to
+a single task. Within a multi-task, the index of the instance which is running can be accessed with 
+`$index`.
+
+The following program prints `0`, `1`, `2`, `3`, `4` in a non-deterministic order:
+
+```
+task Printer[5]
+    $index -> $out
+```
+
+To ensure they were printed in order, another task could mediate the values by receiving from
+specific tasks within the multi-task:
+
+```
+task ConstantSource[5]
+    $index -> Main
+
+task Main
+    i = 0
+    while i < 5
+        x <- ConstantSource[i]
+        x -> $out
+        i = i + 1
 ```
