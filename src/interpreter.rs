@@ -282,14 +282,21 @@ impl TaskState {
     }
 
     fn resolve(&self, name: &str, globals: &Globals) -> Result<Value, InterpreterError> {
+        // Check magic stuff
+        match name {
+            "$out" => return Ok(Value::MagicTaskReference(MagicTask::Out)),
+            "$index" => 
+                if let Some(index) = self.index {
+                    return Ok(Value::Integer(index as i64))
+                } else {
+                    return Ok(Value::Null)
+                }
+            _ => (),
+        }
+        
         // Try locals
         if let Some(val) = self.locals.get(name) {
             return Ok(val.clone());
-        }
-
-        // Check magic tasks
-        if name == "$out" {
-            return Ok(Value::MagicTaskReference(MagicTask::Out))
         }
 
         // Else, try tasks

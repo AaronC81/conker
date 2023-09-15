@@ -18,6 +18,12 @@
                 { "color": "#bda972" }
             ]
         },
+        "(\\$out|\\$index)\\b": {
+            "filterFileRegex": ".*\\.ckr",
+            "decorations": [
+                { "color": "#bda972" }
+            ]
+        },
         "(->|<-)": {
             "filterFileRegex": ".*\\.ckr",
             "decorations": [

@@ -10,7 +10,7 @@ fn test_multi_task() {
     assert_eq!(
         run_code(indoc!{"
             task ConstantSource[5]
-                5 -> Main
+                $index -> Main
 
             task Main
                 total = 0
@@ -22,8 +22,12 @@ fn test_multi_task() {
                 total
         "}),
         Some(HashMap::from([
-            ("ConstantSource".to_string(), Ok(Value::Null)),
-            ("Main".to_string(), Ok(Value::Integer(25))),
+            ("ConstantSource[0]".to_string(), Ok(Value::Null)),
+            ("ConstantSource[1]".to_string(), Ok(Value::Null)),
+            ("ConstantSource[2]".to_string(), Ok(Value::Null)),
+            ("ConstantSource[3]".to_string(), Ok(Value::Null)),
+            ("ConstantSource[4]".to_string(), Ok(Value::Null)),
+            ("Main".to_string(), Ok(Value::Integer(0 + 1 + 2 + 3 + 4))),
         ]))
     );
 }

@@ -1,5 +1,5 @@
 task ConstantSource[5]
-    5 -> Main
+    $index -> Main
 
 task Main
     total = 0
