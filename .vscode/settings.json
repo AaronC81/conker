@@ -1,0 +1,34 @@
+{
+    "highlight.regexes": {
+        "\\b(loop|if|while)\\b": {
+            "filterFileRegex": ".*\\.ckr",
+            "decorations": [
+                { "color": "#93a9e2" }
+            ]
+        },
+        "\\b(task)\\b": {
+            "filterFileRegex": ".*\\.ckr",
+            "decorations": [
+                { "color": "#7287bd" }
+            ]
+        },
+        "\\b(null|true|false)\\b": {
+            "filterFileRegex": ".*\\.ckr",
+            "decorations": [
+                { "color": "#bda972" }
+            ]
+        },
+        "(->|<-)": {
+            "filterFileRegex": ".*\\.ckr",
+            "decorations": [
+                { "fontWeight": "bold", "color": "#fff" }
+            ]
+        },
+        "(#.+)": {
+            "filterFileRegex": ".*\\.ckr",
+            "decorations": [
+                { "color": "#16af18" }
+            ]
+        },
+    }
+}
