@@ -38,7 +38,8 @@ impl From<RecvError> for InterpreterError {
 
 #[derive(Debug, Clone)]
 pub struct Globals {
-    pub tasks: HashMap<String, Value>,
+    pub task_values_by_name: HashMap<String, Value>,
+    pub task_descriptions_by_id: HashMap<TaskID, String>,
 }
 
 #[derive(Clone, Debug)]
@@ -58,7 +59,7 @@ pub enum Value {
     Null,
     Integer(i64),
     Boolean(bool),
-    TaskReference(TaskID),
+    TaskReference(TaskID, String),
     MagicTaskReference(MagicTask),
     Array(Vec<Value>),
     Range {
@@ -91,7 +92,7 @@ impl Value {
 
     fn get_task_id<'a>(&'a self) -> Result<TaskID, InterpreterError> {
         match self {
-            Value::TaskReference(id) => Ok(id.clone()),
+            Value::TaskReference(id, _) => Ok(id.clone()),
             _ => Err(InterpreterError::new("expected a task")),
         }
     }
@@ -101,7 +102,7 @@ impl Value {
             Value::Null => "null".to_string(),
             Value::Integer(i) => i.to_string(),
             Value::Boolean(b) => b.to_string(),
-            Value::TaskReference(id) => format!("<task {}>", id.0),
+            Value::TaskReference(_, name) => format!("<task {name}>"),
             Value::MagicTaskReference(ty) => format!("<task (magic) {}>", match ty {
                 MagicTask::Out => "$out",
             }),
@@ -263,6 +264,7 @@ impl TaskState {
                     
                     // Figure out which channel we received from
                     let (received_from, received_on_chan) = ids_and_receivers[selected.index()];
+                    let received_from_name = globals.task_descriptions_by_id.get(received_from).unwrap().clone();
 
                     // Fetch sent value and result variable
                     let received_value = selected.recv(received_on_chan)?;
@@ -276,14 +278,14 @@ impl TaskState {
                     };
 
                     // Assign value and channel
-                    self.create_or_assign_local(&receiver_local, Value::TaskReference(received_from.clone()));
+                    self.create_or_assign_local(&receiver_local, Value::TaskReference(received_from.clone(), received_from_name));
                     self.create_or_assign_local(&value_local, received_value);
 
                     Ok(Value::Null)
                 } else {
                     // Look up channel to receive on
                     let receiving_from_val = self.evaluate(&channel, globals)?;
-                    let Value::TaskReference(id) = receiving_from_val else {
+                    let Value::TaskReference(id, _) = receiving_from_val else {
                         return Err(InterpreterError::new("tried to receive from non-channel"))
                     };
 
@@ -324,7 +326,7 @@ impl TaskState {
         }
 
         // Else, try tasks
-        if let Some(val) = globals.tasks.get(name) {
+        if let Some(val) = globals.task_values_by_name.get(name) {
             return Ok(val.clone());
         }
     
@@ -350,7 +352,7 @@ impl TaskState {
             .ok_or_else(|| InterpreterError::new(format!("no receiver for task ID {id}")))
     }
     
-    pub fn formatted_name(&mut self) -> String {
+    pub fn formatted_name(&self) -> String {
         if let Some(index) = self.index {
             format!("{}[{}]", self.name, index)
         } else {

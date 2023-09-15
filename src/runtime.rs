@@ -20,7 +20,8 @@ impl Runtime {
 
         Self {
             globals: Globals {
-                tasks: HashMap::new(),
+                task_values_by_name: HashMap::new(),
+                task_descriptions_by_id: HashMap::new(),
             },
             tasks: vec![],
             next_task_id: TaskID(1),
@@ -36,19 +37,19 @@ impl Runtime {
         if let Some(instance_count) = instances {
             let mut ids = vec![];
             for i in 0..instance_count {
-                let id = self.add_one_task(name, body.clone(), Some(i));
-                ids.push(Value::TaskReference(id));
+                let (id, name) = self.add_one_task(name, body.clone(), Some(i));
+                ids.push(Value::TaskReference(id, name));
             }
             global_value = Value::Array(ids)
         } else {
-            let id = self.add_one_task(name, body, None);
-            global_value = Value::TaskReference(id);
+            let (id, name) = self.add_one_task(name, body, None);
+            global_value = Value::TaskReference(id, name);
         }
 
-        self.globals.tasks.insert(name.to_string(), global_value);
+        self.globals.task_values_by_name.insert(name.to_string(), global_value);
     }
 
-    pub fn add_one_task(&mut self, name: &str, body: Node, index: Option<usize>) -> TaskID {
+    pub fn add_one_task(&mut self, name: &str, body: Node, index: Option<usize>) -> (TaskID, String) {
         let id = self.take_task_id();
         let state = TaskState {
             name: name.to_string(),
@@ -60,8 +61,11 @@ impl Runtime {
             receivers: HashMap::new(),
             senders: HashMap::new(),
         };
+        let name = state.formatted_name();
+        self.globals.task_descriptions_by_id.insert(id, name.clone());
         self.tasks.push((state, body));
-        id
+
+        (id, name)
     }
 
     pub fn start(&mut self) {
