@@ -274,7 +274,7 @@ impl<'t> Parser<'t> {
     }
 
     fn parse_comparison(&mut self) -> Option<Node> {
-        let mut left = self.parse_parens()?;
+        let mut left = self.parse_assign()?;
 
         loop {
             match self.this().kind {
@@ -305,6 +305,20 @@ impl<'t> Parser<'t> {
 
                 _ => break,
             }
+        }
+
+        Some(left)
+    }
+
+    fn parse_assign(&mut self) -> Option<Node> {
+        let mut left = self.parse_parens()?;
+
+        while self.this().kind == TokenKind::Assign {
+            self.advance();
+            left = Node::new(NodeKind::Assign {
+                destination: Box::new(left),
+                value: Box::new(self.parse_expression()?),
+            });
         }
 
         Some(left)

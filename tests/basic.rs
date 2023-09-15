@@ -68,3 +68,15 @@ fn test_array() {
         ]))
     );
 }
+
+#[test]
+fn test_assign() {
+    assert_eq!(
+        run_one_task(indoc!{"
+            task X
+                x = 3
+                x
+        "}),
+        Ok(Value::Integer(3))
+    );
+}

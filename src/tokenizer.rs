@@ -52,6 +52,8 @@ pub enum TokenKind {
     RightBrace,
     Comma,
 
+    Assign,
+
     KwTask,
     KwIf,
     KwWhile,
@@ -184,6 +186,7 @@ impl<'s> Tokenizer<'s> {
                         self.advance();
                         self.tokens.push(Token::new(TokenKind::Equals))
                     },
+                    '=' => self.tokens.push(Token::new(TokenKind::Assign)),
                     '>' => self.tokens.push(Token::new(TokenKind::GreaterThan)),
                     '<' => self.tokens.push(Token::new(TokenKind::LessThan)),
 

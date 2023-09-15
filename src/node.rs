@@ -35,6 +35,11 @@ pub enum NodeKind {
         body: Box<Node>,
     },
 
+    Assign {
+        value: Box<Node>,
+        destination: Box<Node>,
+    },
+
     Send {
         value: Box<Node>,
         channel: Box<Node>,

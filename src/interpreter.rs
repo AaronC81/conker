@@ -166,6 +166,18 @@ impl TaskState {
                 }
                 Ok(result)
             }
+
+            NodeKind::Assign { value, destination } => {
+                let value = self.evaluate(&value, globals)?;
+
+                // Assign to local
+                let NodeKind::Identifier(dest_local) = &destination.kind else {
+                    return Err(InterpreterError::new("expected identifier for result of assign"))
+                };
+                self.create_or_assign_local(&dest_local, value);
+
+                Ok(Value::Null)
+            }
             
             NodeKind::Send { value, channel } => {
                 let value = self.evaluate(&value, globals)?;
