@@ -17,6 +17,10 @@ pub enum NodeKind {
     BooleanLiteral(bool),
     NullLiteral,
     ArrayLiteral(Vec<Node>),
+    Range {
+        begin: Box<Node>,
+        end: Box<Node>,
+    },
 
     Identifier(String),
 

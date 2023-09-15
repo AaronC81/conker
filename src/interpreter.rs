@@ -61,6 +61,10 @@ pub enum Value {
     TaskReference(TaskID),
     MagicTaskReference(MagicTask),
     Array(Vec<Value>),
+    Range {
+        begin: Box<Value>,
+        end: Box<Value>,
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -102,7 +106,9 @@ impl Value {
                 MagicTask::Out => "$out",
             }),
             Value::Array(vals) => format!("[ {} ]",
-                vals.iter().map(|v| v.to_printable_string()).collect::<Vec<_>>().join(", "))
+                vals.iter().map(|v| v.to_printable_string()).collect::<Vec<_>>().join(", ")),
+            Value::Range { begin, end } => format!("{} .. {}",
+                begin.to_printable_string(), end.to_printable_string()),
         }
     }
 }
@@ -128,6 +134,13 @@ impl TaskState {
                 => Ok(Value::Array(items.iter()
                     .map(|i| self.evaluate(i, globals))
                     .collect::<Result<Vec<_>, _>>()?)),
+
+            NodeKind::Range { begin, end } => {
+                let begin = self.evaluate(begin, globals)?;
+                let end = self.evaluate(end, globals)?;
+
+                Ok(Value::Range { begin: Box::new(begin), end: Box::new(end) })
+            },
 
             NodeKind::Identifier(name)
                 => self.resolve(&name, globals),
@@ -191,17 +204,28 @@ impl TaskState {
                     return Err(InterpreterError::new("expected array"))
                 };
 
-                let mut index = index.get_integer()?;
+                match index {
+                    Value::Integer(index) => {        
+                        if let Some(item) = items.get(Self::wrap_as_index(index, items.len())) {
+                            Ok(item.clone())
+                        } else {
+                            Err(InterpreterError::new(format!("index {index} is out of range")))
+                        }
+                    },
 
-                if index < 0 {
-                    index = items.len() as i64 + index;
-                }
-                let index = index as usize;
+                    Value::Range { begin, end } => {
+                        let begin_val = Self::wrap_as_index(begin.get_integer()?, items.len());
+                        let end_val = Self::wrap_as_index(end.get_integer()?, items.len());
 
-                if let Some(item) = items.get(index) {
-                    Ok(item.clone())
-                } else {
-                    return Err(InterpreterError::new(format!("index {index} is out of range")))
+                        if let Some(items) = items.get(begin_val..end_val) {
+                            Ok(Value::Array(items.to_vec()))
+                        } else {
+                            Err(InterpreterError::new(format!("indeces {} .. {} are out of range",
+                                begin.to_printable_string(), end.to_printable_string())))
+                        }
+                    }
+
+                    _ => Err(InterpreterError::new(format!("expected integer or range as index")))
                 }
             }
             
@@ -332,5 +356,12 @@ impl TaskState {
         } else {
             self.name.clone()
         }
+    }
+
+    fn wrap_as_index(mut index: i64, len: usize) -> usize {
+        if index < 0 {
+            index = len as i64 + index;
+        }
+        index as usize
     }
 }

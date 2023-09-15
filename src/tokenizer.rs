@@ -41,6 +41,8 @@ pub enum TokenKind {
     GreaterThan,
     LessThan,
 
+    Range,
+
     SendArrow,
     ReceiveArrow,
     QuestionMark,
@@ -189,6 +191,11 @@ impl<'s> Tokenizer<'s> {
                     '=' => self.tokens.push(Token::new(TokenKind::Assign)),
                     '>' => self.tokens.push(Token::new(TokenKind::GreaterThan)),
                     '<' => self.tokens.push(Token::new(TokenKind::LessThan)),
+
+                    '.' if self.next() == '.' => {
+                        self.advance();
+                        self.tokens.push(Token::new(TokenKind::Range))
+                    },
 
                     _ => self.push_unexpected_error(),
                 }

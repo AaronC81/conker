@@ -79,6 +79,19 @@ fn test_array() {
         "}),
         Ok(Value::Integer(20 + 30))
     );
+
+    // Slice indexing
+    assert_eq!(
+        run_one_task(indoc!{"
+            task X
+                x = [ 10, 20, 30, 40, 50, 60, 70, 80 ]
+                x[2..4]
+        "}),
+        Ok(Value::Array(vec![
+            Value::Integer(30),
+            Value::Integer(40),
+        ]))
+    );
 }
 
 #[test]
