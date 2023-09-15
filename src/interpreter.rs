@@ -59,6 +59,7 @@ pub enum Value {
     Boolean(bool),
     TaskReference(TaskID),
     MagicTaskReference(MagicTask),
+    Array(Vec<Value>),
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -99,6 +100,8 @@ impl Value {
             Value::MagicTaskReference(ty) => format!("<task (magic) {}>", match ty {
                 MagicTask::Out => "$out",
             }),
+            Value::Array(vals) => format!("[ {} ]",
+                vals.iter().map(|v| v.to_printable_string()).collect::<Vec<_>>().join(", "))
         }
     }
 }
@@ -120,6 +123,11 @@ impl TaskState {
                 => Ok(Value::Boolean(*b)),
             NodeKind::NullLiteral
                 => Ok(Value::Null),
+            NodeKind::ArrayLiteral(items)
+                => Ok(Value::Array(items.iter()
+                    .map(|i| self.evaluate(i, globals))
+                    .collect::<Result<Vec<_>, _>>()?)),
+
             NodeKind::Identifier(name)
                 => self.resolve(&name, globals),
             

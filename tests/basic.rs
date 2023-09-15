@@ -43,3 +43,28 @@ fn test_comparisons() {
         Ok(Value::Boolean(true))
     );
 }
+
+#[test]
+fn test_array() {
+    assert_eq!(
+        run_one_expression("[ ]"),
+        Ok(Value::Array(vec![]))
+    );
+
+    assert_eq!(
+        run_one_expression("[ 1, 2, 3 ]"),
+        Ok(Value::Array(vec![
+            Value::Integer(1),
+            Value::Integer(2),
+            Value::Integer(3),
+        ]))
+    );
+    assert_eq!(
+        run_one_expression("[ 1, 2, 3, ]"), // Trailing comma
+        Ok(Value::Array(vec![
+            Value::Integer(1),
+            Value::Integer(2),
+            Value::Integer(3),
+        ]))
+    );
+}

@@ -48,6 +48,10 @@ pub enum TokenKind {
     LeftParen,
     RightParen,
 
+    LeftBrace,
+    RightBrace,
+    Comma,
+
     KwTask,
     KwIf,
     KwWhile,
@@ -171,6 +175,10 @@ impl<'s> Tokenizer<'s> {
 
                     '(' => self.tokens.push(Token::new(TokenKind::LeftParen)),
                     ')' => self.tokens.push(Token::new(TokenKind::RightParen)),
+
+                    '[' => self.tokens.push(Token::new(TokenKind::LeftBrace)),
+                    ']' => self.tokens.push(Token::new(TokenKind::RightBrace)),
+                    ',' => self.tokens.push(Token::new(TokenKind::Comma)),
 
                     '=' if self.next() == '=' => {
                         self.advance();

@@ -351,6 +351,22 @@ impl<'t> Parser<'t> {
                 self.advance();
                 Some(Node::new(NodeKind::NullLiteral))
             }
+
+            TokenKind::LeftBrace => {
+                self.advance();
+
+                let mut items = vec![];
+                while self.this().kind != TokenKind::RightBrace {
+                    items.push(self.parse_expression()?);
+
+                    if self.this().kind != TokenKind::RightBrace {
+                        self.expect(TokenKind::Comma)?;
+                    }
+                }
+                self.advance();
+
+                Some(Node::new(NodeKind::ArrayLiteral(items)))
+            }
             
             _ => {
                 self.push_unexpected_error();

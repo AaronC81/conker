@@ -16,6 +16,7 @@ pub enum NodeKind {
     IntegerLiteral(i64),
     BooleanLiteral(bool),
     NullLiteral,
+    ArrayLiteral(Vec<Node>),
 
     Identifier(String),
 
