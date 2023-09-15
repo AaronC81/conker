@@ -1,4 +1,6 @@
-use conker::interpreter::Value;
+use std::collections::HashMap;
+
+use conker::{interpreter::Value, run_code};
 use indoc::indoc;
 
 use crate::utils::{run_one_task, run_one_expression};
@@ -78,5 +80,37 @@ fn test_assign() {
                 x
         "}),
         Ok(Value::Integer(3))
+    );
+}
+
+#[test]
+fn test_precedence() {
+    // Arithmetic
+    assert_eq!(
+        run_one_expression("2 + 3 * 5"),
+        Ok(Value::Integer(2 + (3 * 5)))
+    );
+    assert_eq!(
+        run_one_expression("3 * 5 + 2"),
+        Ok(Value::Integer((3 * 5) + 2))
+    );
+
+    // Assignments and sends
+    assert_eq!(
+        run_code(indoc!{"
+            task Bounce
+                x <- ?c
+                x -> c
+
+            task X
+                x = 2 + 3
+                x + 1 -> Bounce
+                y <- Bounce
+                y
+        "}),
+        Some(HashMap::from([
+            ("Bounce".to_string(), Ok(Value::Null)),
+            ("X".to_string(), Ok(Value::Integer(6))),
+        ]))
     );
 }
