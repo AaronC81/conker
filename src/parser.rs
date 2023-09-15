@@ -212,28 +212,50 @@ impl<'t> Parser<'t> {
     }
 
     fn parse_expression(&mut self) -> Option<Node> {
-        self.parse_mul_div()
+        self.parse_assign()
     }
 
-    fn parse_mul_div(&mut self) -> Option<Node> {
+    fn parse_assign(&mut self) -> Option<Node> {
+        let mut left = self.parse_comparison()?;
+
+        while self.this().kind == TokenKind::Assign {
+            self.advance();
+            left = Node::new(NodeKind::Assign {
+                destination: Box::new(left),
+                value: Box::new(self.parse_comparison()?),
+            });
+        }
+
+        Some(left)
+    }
+
+    fn parse_comparison(&mut self) -> Option<Node> {
         let mut left = self.parse_add_sub()?;
 
         loop {
             match self.this().kind {
-                TokenKind::Multiply => {
+                TokenKind::Equals => {
                     self.advance();
                     left = Node::new(NodeKind::BinaryOperation {
                         left: Box::new(left),
-                        op: BinaryOperator::Multiply,
-                        right: Box::new(self.parse_expression()?),
+                        op: BinaryOperator::Equals,
+                        right: Box::new(self.parse_add_sub()?),
                     });
                 },
-                TokenKind::Divide  => {
+                TokenKind::LessThan => {
                     self.advance();
                     left = Node::new(NodeKind::BinaryOperation {
                         left: Box::new(left),
-                        op: BinaryOperator::Divide,
-                        right: Box::new(self.parse_expression()?),
+                        op: BinaryOperator::LessThan,
+                        right: Box::new(self.parse_add_sub()?),
+                    });
+                },
+                TokenKind::GreaterThan => {
+                    self.advance();
+                    left = Node::new(NodeKind::BinaryOperation {
+                        left: Box::new(left),
+                        op: BinaryOperator::GreaterThan,
+                        right: Box::new(self.parse_add_sub()?),
                     });
                 },
 
@@ -245,7 +267,7 @@ impl<'t> Parser<'t> {
     }
 
     fn parse_add_sub(&mut self) -> Option<Node> {
-        let mut left = self.parse_comparison()?;
+        let mut left = self.parse_mul_div()?;
 
         loop {
             match self.this().kind {
@@ -254,7 +276,7 @@ impl<'t> Parser<'t> {
                     left = Node::new(NodeKind::BinaryOperation {
                         left: Box::new(left),
                         op: BinaryOperator::Add,
-                        right: Box::new(self.parse_expression()?),
+                        right: Box::new(self.parse_mul_div()?),
                     });
                 },
                 TokenKind::Subtract => {
@@ -262,7 +284,7 @@ impl<'t> Parser<'t> {
                     left = Node::new(NodeKind::BinaryOperation {
                         left: Box::new(left),
                         op: BinaryOperator::Subtract,
-                        right: Box::new(self.parse_expression()?),
+                        right: Box::new(self.parse_mul_div()?),
                     });
                 },
 
@@ -273,52 +295,30 @@ impl<'t> Parser<'t> {
         Some(left)
     }
 
-    fn parse_comparison(&mut self) -> Option<Node> {
-        let mut left = self.parse_assign()?;
+    fn parse_mul_div(&mut self) -> Option<Node> {
+        let mut left = self.parse_parens()?;
 
         loop {
             match self.this().kind {
-                TokenKind::Equals => {
+                TokenKind::Multiply => {
                     self.advance();
                     left = Node::new(NodeKind::BinaryOperation {
                         left: Box::new(left),
-                        op: BinaryOperator::Equals,
-                        right: Box::new(self.parse_expression()?),
+                        op: BinaryOperator::Multiply,
+                        right: Box::new(self.parse_parens()?),
                     });
                 },
-                TokenKind::LessThan => {
+                TokenKind::Divide  => {
                     self.advance();
                     left = Node::new(NodeKind::BinaryOperation {
                         left: Box::new(left),
-                        op: BinaryOperator::LessThan,
-                        right: Box::new(self.parse_expression()?),
-                    });
-                },
-                TokenKind::GreaterThan => {
-                    self.advance();
-                    left = Node::new(NodeKind::BinaryOperation {
-                        left: Box::new(left),
-                        op: BinaryOperator::GreaterThan,
-                        right: Box::new(self.parse_expression()?),
+                        op: BinaryOperator::Divide,
+                        right: Box::new(self.parse_parens()?),
                     });
                 },
 
                 _ => break,
             }
-        }
-
-        Some(left)
-    }
-
-    fn parse_assign(&mut self) -> Option<Node> {
-        let mut left = self.parse_parens()?;
-
-        while self.this().kind == TokenKind::Assign {
-            self.advance();
-            left = Node::new(NodeKind::Assign {
-                destination: Box::new(left),
-                value: Box::new(self.parse_expression()?),
-            });
         }
 
         Some(left)
