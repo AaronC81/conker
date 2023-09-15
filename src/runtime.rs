@@ -35,24 +35,26 @@ impl Runtime {
 
         if let Some(instance_count) = instances {
             let mut ids = vec![];
-            for _ in 0..instance_count {
-                let id = self.add_one_task(name, body.clone());
+            for i in 0..instance_count {
+                let id = self.add_one_task(name, body.clone(), Some(i));
                 ids.push(Value::TaskReference(id));
             }
             global_value = Value::Array(ids)
         } else {
-            let id = self.add_one_task(name, body);
+            let id = self.add_one_task(name, body, None);
             global_value = Value::TaskReference(id);
         }
 
         self.globals.tasks.insert(name.to_string(), global_value);
     }
 
-    pub fn add_one_task(&mut self, name: &str, body: Node) -> TaskID {
+    pub fn add_one_task(&mut self, name: &str, body: Node, index: Option<usize>) -> TaskID {
         let id = self.take_task_id();
         let state = TaskState {
             name: name.to_string(),
             id,
+            index,
+
             locals: HashMap::new(),
 
             receivers: HashMap::new(),
@@ -67,14 +69,14 @@ impl Runtime {
             let cloned_globals = self.globals.clone();
             let cloned_body = body.clone();
             let cloned_sender = self.result_sender.clone();
-            let cloned_name = task.name.clone();
+            let formatted_name = task.formatted_name();
 
             // TODO: cloning task is Bad, probably!
             let mut cloned_task = task.clone();
             
             thread::spawn(move || {
                 let result = cloned_task.evaluate(&cloned_body, &cloned_globals);
-                cloned_sender.send((cloned_task.id, cloned_name, result))
+                cloned_sender.send((cloned_task.id, formatted_name, result))
             });
         }
     }

@@ -45,6 +45,7 @@ pub struct Globals {
 pub struct TaskState {
     pub name: String,
     pub id: TaskID,
+    pub index: Option<usize>,
 
     pub locals: HashMap<String, Value>,
 
@@ -164,7 +165,7 @@ impl TaskState {
                     if !cond.is_truthy() {
                         break
                     }
-                    
+
                     result = self.evaluate(&body, globals)?
                 }
                 Ok(result)
@@ -316,5 +317,13 @@ impl TaskState {
     fn get_receiver_from_task(&self, id: &TaskID) -> Result<&Receiver<Value>, InterpreterError> {
         self.receivers.get(id)
             .ok_or_else(|| InterpreterError::new(format!("no receiver for task ID {id}")))
+    }
+    
+    pub fn formatted_name(&mut self) -> String {
+        if let Some(index) = self.index {
+            format!("{}[{}]", self.name, index)
+        } else {
+            self.name.clone()
+        }
     }
 }
