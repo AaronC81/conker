@@ -7,8 +7,7 @@ computer architecture featured in
 ## Semantics
 
 A Conker program is comprised of _tasks_, all of which run concurrently as separate threads. Tasks
-can communicate with each other by sending values over _channels_. A task's state consists of values
-it has received from other tasks through channels.
+can communicate with each other by sending values over _channels_.
 
 Channels have no buffer - sends and receives block until the other side is satisfied.
 
@@ -46,22 +45,14 @@ channel as `a`.
 ## Advanced Example - Counter
 
 ```
-# Receives a value and sends it back 
-# Can be used as a "register" for short-term storage
-task Bouncer
-    loop
-        a <- ?c
-        a -> c
-
 # When receiving any message, responds with a number, 
 # then increments the number for next time
 task Counter
-    0 -> Bouncer
+    x = 0
     loop
-        x <- Bouncer
         _ <- ?c
-        (x + 1) -> c
-        (x + 1) -> Bouncer
+        x = (x + 1)
+        x -> c
 
 # Counts forever
 task Main
